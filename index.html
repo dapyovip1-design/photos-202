@@ -111,6 +111,7 @@ body.open .nav{transform:none}body.open .scrim{opacity:1;pointer-events:auto}
 #dlgb .dbtn{padding:13px;border-radius:14px;font-weight:700;background:var(--ac);color:#000}
 #dlgb .dbtn.o{background:#222;color:#fff}#dlgb .dbtn.dng{background:#3a0f12;color:#ff9c9c}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+#ver{position:fixed;bottom:3px;inset-inline-end:8px;font-size:10px;color:#ffffff40;pointer-events:none;z-index:1}
 </style>
 </head>
 <body>
@@ -124,6 +125,7 @@ body.open .nav{transform:none}body.open .scrim{opacity:1;pointer-events:auto}
 <div id="lg" role="dialog" aria-modal="true"><div class="box"><div class="lh"><b id="lgt"></b><button class="ib" id="lgx">✕</button></div><div class="lgrid" id="lgrid"></div></div></div>
 <nav class="nav" id="nav" aria-label="الصفحات"><h3>Instagram Photos</h3></nav>
 <main id="view"></main>
+<div id="ver">v6</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="lb" role="dialog" aria-modal="true">
   <div class="bar">
@@ -686,7 +688,7 @@ function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^
 const blobToUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("read"));r.readAsDataURL(b)});
 const isWV=/; wv\)/i.test(navigator.userAgent);
 function dataToBlob(url){const i=url.indexOf(","),mt=(url.slice(5,i).split(";")[0])||"image/jpeg",bin=atob(url.slice(i+1)),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);return new Blob([u8],{type:mt})}
-function dlBlob(blob,name){if(isWV)toast(xt("dl_hint"));const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800000)}
+function dlBlob(blob,name){if(isWV){toast(xt("dl_hint"));blob=new Blob([blob],{type:"application/pdf"})}const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800000)}
 
 /* ---- التخزين: IndexedDB وبديل في الذاكرة ---- */
 let mine=[],mineReady=false,dbp=null,memOnly=false,memWarned=false;
