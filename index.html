@@ -633,8 +633,14 @@ $("scrim").onclick=()=>document.body.classList.remove("open");
 $("x").onclick=()=>$("lb").classList.remove("show");
 $("prev").onclick=()=>step(-1); $("next").onclick=()=>step(1);
 $("dl").onclick=()=>{
+  const src=list[idx];
+  if(/^data:/i.test(src)){
+    try{const b=dataToBlob(src),ext=(b.type.split("/")[1]||"jpg").split("+")[0].replace("jpeg","jpg");dlBlob(b,"photo-"+Date.now()+"."+ext)}
+    catch(e){console.error(e);toast(xt("err"))}
+    return;
+  }
   const a=document.createElement("a");
-  a.href=list[idx]; a.download=list[idx].split("/").pop();
+  a.href=src; a.download=src.split("/").pop();
   document.body.appendChild(a); a.click(); a.remove();
 };
 document.addEventListener("keydown",e=>{if(!$("lb").classList.contains("show"))return;
@@ -652,7 +658,7 @@ const X={
   added:"تمت إضافة الصورة",added_n:"تمت إضافة {n} صور",err:"حدث خطأ، جرّب صورة أخرى",
   mem:"التخزين غير متاح، الصور لن تبقى بعد إغلاق التطبيق",confirm_del:"حذف هذه الصورة نهائيًا؟",deleted:"تم حذف الصورة",
   replaced:"تم استبدال الصورة",saved_here:"تم الحفظ في هذا المجلد",save_q:"كيف تريد الحفظ؟",
-  save_copy:"حفظ نسخة في هذا المجلد",replace:"استبدال الصورة الأصلية",download:"تنزيل على الجهاز",dl_started:"جارٍ التنزيل...",
+  save_copy:"حفظ نسخة في هذا المجلد",replace:"استبدال الصورة الأصلية",download:"تنزيل على الجهاز",dl_started:"جارٍ التنزيل...",dl_hint:"اكتب اسمًا للصورة (مثلًا photo.jpg) ثم اضغط OK",
   crop:"قص",rotate:"تدوير",filters:"فلاتر",adjust:"ضبط",text:"نص",free:"حر",apply:"تطبيق",reset:"إعادة ضبط",
   brightness:"السطوع",contrast:"التباين",saturation:"التشبع",
   f_orig:"أصلي",f_bw:"أبيض وأسود",f_sepia:"سيبيا",f_vivid:"حيوي",f_warm:"دافئ",f_cool:"بارد",f_fade:"باهت",f_drama:"درامي",
@@ -661,7 +667,7 @@ const X={
   added:"Photo added",added_n:"{n} photos added",err:"Something went wrong, try another photo",
   mem:"Storage unavailable, photos won't stay after closing the app",confirm_del:"Delete this photo permanently?",deleted:"Photo deleted",
   replaced:"Photo replaced",saved_here:"Saved to this folder",save_q:"How do you want to save?",
-  save_copy:"Save a copy in this folder",replace:"Replace the original",download:"Download to device",dl_started:"Downloading...",
+  save_copy:"Save a copy in this folder",replace:"Replace the original",download:"Download to device",dl_started:"Downloading...",dl_hint:"Type a file name (e.g. photo.jpg), then tap OK",
   crop:"Crop",rotate:"Rotate",filters:"Filters",adjust:"Adjust",text:"Text",free:"Free",apply:"Apply",reset:"Reset",
   brightness:"Brightness",contrast:"Contrast",saturation:"Saturation",
   f_orig:"Original",f_bw:"B&W",f_sepia:"Sepia",f_vivid:"Vivid",f_warm:"Warm",f_cool:"Cool",f_fade:"Fade",f_drama:"Drama",
@@ -678,7 +684,9 @@ function ask(msg,opts){return new Promise(res=>{
 })}
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^(data|blob):/i.test(src))im.crossOrigin="anonymous";im.onload=()=>res(im);im.onerror=()=>rej(new Error("img"));im.src=src})}
 const blobToUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("read"));r.readAsDataURL(b)});
-function dlBlob(blob,name){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}
+const isWV=/; wv\)/i.test(navigator.userAgent);
+function dataToBlob(url){const i=url.indexOf(","),mt=(url.slice(5,i).split(";")[0])||"image/jpeg",bin=atob(url.slice(i+1)),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);return new Blob([u8],{type:mt})}
+function dlBlob(blob,name){if(isWV)toast(xt("dl_hint"));const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}
 
 /* ---- التخزين: IndexedDB وبديل في الذاكرة ---- */
 let mine=[],mineReady=false,dbp=null,memOnly=false,memWarned=false;
@@ -907,7 +915,7 @@ $("es").onclick=async()=>{
   opts.push({t:xt("download"),v:"dl",c:"o"},{t:xt("cancel"),v:null,c:"o"});
   const v=await ask(xt("save_q"),opts); if(!v)return;
   let blob;try{blob=await exportBlob()}catch(e){toast(xt("err"));return}
-  if(v==="dl"){dlBlob(blob,"photo-"+Date.now()+(E.png?".png":".jpg"));toast(xt("dl_started"));return}
+  if(v==="dl"){dlBlob(blob,"photo-"+Date.now()+(E.png?".png":".jpg"));if(!isWV)toast(xt("dl_started"));return}
   const orig=mine.find(m=>m.id===E.mineId);
   if(v==="rep"&&orig){await putMine({id:orig.id,page:orig.page,blob,ts:orig.ts});toast(xt("replaced"))}
   else{await putMine({id:newId(),page:E.page,blob,ts:Date.now()});toast(xt("saved_here"))}
