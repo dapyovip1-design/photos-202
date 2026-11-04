@@ -686,7 +686,7 @@ function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^
 const blobToUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("read"));r.readAsDataURL(b)});
 const isWV=/; wv\)/i.test(navigator.userAgent);
 function dataToBlob(url){const i=url.indexOf(","),mt=(url.slice(5,i).split(";")[0])||"image/jpeg",bin=atob(url.slice(i+1)),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);return new Blob([u8],{type:mt})}
-function dlBlob(blob,name){if(isWV)toast(xt("dl_hint"));const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000)}
+function dlBlob(blob,name){if(isWV)toast(xt("dl_hint"));const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800000)}
 
 /* ---- التخزين: IndexedDB وبديل في الذاكرة ---- */
 let mine=[],mineReady=false,dbp=null,memOnly=false,memWarned=false;
