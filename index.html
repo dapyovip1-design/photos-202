@@ -111,7 +111,8 @@ body.open .nav{transform:none}body.open .scrim{opacity:1;pointer-events:auto}
 #dlgb .dbtn{padding:13px;border-radius:14px;font-weight:700;background:var(--ac);color:#000}
 #dlgb .dbtn.o{background:#222;color:#fff}#dlgb .dbtn.dng{background:#3a0f12;color:#ff9c9c}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
-#ver{position:fixed;bottom:3px;inset-inline-end:8px;font-size:10px;color:#ffffff40;pointer-events:none;z-index:1}
+#ver{position:fixed;bottom:0;inset-inline-end:0;font-size:10px;color:#ffffff40;padding:10px 12px;z-index:1}
+#dlgm{white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -125,7 +126,7 @@ body.open .nav{transform:none}body.open .scrim{opacity:1;pointer-events:auto}
 <div id="lg" role="dialog" aria-modal="true"><div class="box"><div class="lh"><b id="lgt"></b><button class="ib" id="lgx">✕</button></div><div class="lgrid" id="lgrid"></div></div></div>
 <nav class="nav" id="nav" aria-label="الصفحات"><h3>Instagram Photos</h3></nav>
 <main id="view"></main>
-<div id="ver">v7</div>
+<div id="ver">v8</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="lb" role="dialog" aria-modal="true">
   <div class="bar">
@@ -686,7 +687,14 @@ function ask(msg,opts){return new Promise(res=>{
 })}
 function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^(data|blob):/i.test(src))im.crossOrigin="anonymous";im.onload=()=>res(im);im.onerror=()=>rej(new Error("img"));im.src=src})}
 const blobToUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("read"));r.readAsDataURL(b)});
-const isWV=/; wv\)/i.test(navigator.userAgent);
+const APPSIG=(()=>{try{
+  if(/; wv\)/i.test(navigator.userAgent))return{on:true,why:"wv in UA"};
+  const br=(navigator.userAgentData&&navigator.userAgentData.brands)||[];
+  if(br.some(x=>/webview/i.test(x.brand)))return{on:true,why:"WebView brand"};
+  if(/[?&]app=1(&|$)/.test(location.search)){try{localStorage.setItem("appmode","1")}catch(e){}return{on:true,why:"?app=1"}}
+  if(localStorage.getItem("appmode")==="1")return{on:true,why:"forced/saved"};
+ }catch(e){} return{on:false,why:"none"}})();
+const isWV=APPSIG.on;
 function dataToBlob(url){const i=url.indexOf(","),mt=(url.slice(5,i).split(";")[0])||"image/jpeg",bin=atob(url.slice(i+1)),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);return new Blob([u8],{type:mt})}
 async function packForChrome(blob){
   const im=await loadImg(await blobToUrl(blob)),png=/png|webp|gif/.test(blob.type);let mx=1200,q=.82,out="";
@@ -937,6 +945,15 @@ $("es").onclick=async()=>{
   closeEditor();$("lb").classList.remove("show");go(cur);
 };
 
+let vt=0,vtm;
+$("ver").onclick=async()=>{
+  clearTimeout(vtm);vt++;vtm=setTimeout(()=>{vt=0},4000);if(vt<5)return;vt=0;
+  const br=((navigator.userAgentData&&navigator.userAgentData.brands)||[]).map(x=>x.brand).join(", ");
+  const r=await ask("v8 · app mode: "+(isWV?"ON":"OFF")+" ("+APPSIG.why+")\nUA: "+navigator.userAgent+"\nbrands: "+(br||"-"),
+    [{t:"Force app mode ON",v:"on"},{t:"Back to automatic",v:"off",c:"o"},{t:"Close",v:null,c:"o"}]);
+  if(r==="on"){try{localStorage.setItem("appmode","1")}catch(e){}location.reload()}
+  if(r==="off"){try{localStorage.removeItem("appmode")}catch(e){}location.reload()}
+};
 let saved="ar"; try{saved=localStorage.getItem("lang")||"ar"}catch(e){}
 applyLang(saved);
 loadMine();
