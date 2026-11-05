@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Save photo</title>
+<style>
+  body{margin:0;background:#0b0b0b;color:#fff;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:18px;box-sizing:border-box;text-align:center}
+  img{max-width:100%;max-height:66vh;border-radius:14px;background:#1a1a1a}
+  a.btn{background:#8D36FF;color:#000;font-weight:700;padding:15px 34px;border-radius:999px;text-decoration:none;font-size:19px}
+  p{color:#aaa;margin:0;font-size:14px;max-width:420px;line-height:1.7}
+</style>
+</head>
+<body>
+<img id="im" alt="">
+<a id="dl" class="btn" href="#"></a>
+<p id="hint"></p>
+<script>
+const ar=/^ar/i.test(navigator.language);
+const T=ar?{dl:"⬇ تنزيل الصورة",hint:"أو اضغط مطولًا على الصورة واختر «تنزيل الصورة». الصورة لا تُرفع لأي مكان، هي موجودة داخل الرابط فقط.",bad:"لا توجد صورة في هذا الرابط"}
+          :{dl:"⬇ Download photo",hint:"Or press and hold the photo and choose “Download image”. The photo is never uploaded anywhere, it only lives inside this link.",bad:"No photo in this link"};
+(function(){
+  const h=location.hash.slice(1),i=h.indexOf(":"),ext=h.slice(0,i),b64=h.slice(i+1);
+  if(!b64||!/^(jpg|png)$/.test(ext)){document.body.textContent=T.bad;return}
+  try{
+    const bin=atob(b64),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);
+    const url=URL.createObjectURL(new Blob([u8],{type:ext==="png"?"image/png":"image/jpeg"}));
+    document.getElementById("im").src=url;
+    const a=document.getElementById("dl");a.href=url;a.download="photo-"+Date.now()+"."+ext;a.textContent=T.dl;
+    document.getElementById("hint").textContent=T.hint;
+  }catch(e){document.body.textContent=T.bad}
+})();
+</script>
+</body>
+</html>

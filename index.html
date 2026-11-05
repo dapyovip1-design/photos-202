@@ -125,7 +125,7 @@ body.open .nav{transform:none}body.open .scrim{opacity:1;pointer-events:auto}
 <div id="lg" role="dialog" aria-modal="true"><div class="box"><div class="lh"><b id="lgt"></b><button class="ib" id="lgx">✕</button></div><div class="lgrid" id="lgrid"></div></div></div>
 <nav class="nav" id="nav" aria-label="الصفحات"><h3>Instagram Photos</h3></nav>
 <main id="view"></main>
-<div id="ver">v6</div>
+<div id="ver">v7</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="lb" role="dialog" aria-modal="true">
   <div class="bar">
@@ -660,7 +660,7 @@ const X={
   added:"تمت إضافة الصورة",added_n:"تمت إضافة {n} صور",err:"حدث خطأ، جرّب صورة أخرى",
   mem:"التخزين غير متاح، الصور لن تبقى بعد إغلاق التطبيق",confirm_del:"حذف هذه الصورة نهائيًا؟",deleted:"تم حذف الصورة",
   replaced:"تم استبدال الصورة",saved_here:"تم الحفظ في هذا المجلد",save_q:"كيف تريد الحفظ؟",
-  save_copy:"حفظ نسخة في هذا المجلد",replace:"استبدال الصورة الأصلية",download:"تنزيل على الجهاز",dl_started:"جارٍ التنزيل...",dl_hint:"اكتب اسمًا للصورة (مثلًا photo.jpg) ثم اضغط OK",
+  save_copy:"حفظ نسخة في هذا المجلد",replace:"استبدال الصورة الأصلية",download:"تنزيل على الجهاز",dl_started:"جارٍ التنزيل...",dl_hint:"اكتب اسمًا للصورة (مثلًا photo.jpg) ثم اضغط OK",chrome_hint:"سيفتح المتصفح، اضغط «تنزيل الصورة» هناك",
   crop:"قص",rotate:"تدوير",filters:"فلاتر",adjust:"ضبط",text:"نص",free:"حر",apply:"تطبيق",reset:"إعادة ضبط",
   brightness:"السطوع",contrast:"التباين",saturation:"التشبع",
   f_orig:"أصلي",f_bw:"أبيض وأسود",f_sepia:"سيبيا",f_vivid:"حيوي",f_warm:"دافئ",f_cool:"بارد",f_fade:"باهت",f_drama:"درامي",
@@ -669,7 +669,7 @@ const X={
   added:"Photo added",added_n:"{n} photos added",err:"Something went wrong, try another photo",
   mem:"Storage unavailable, photos won't stay after closing the app",confirm_del:"Delete this photo permanently?",deleted:"Photo deleted",
   replaced:"Photo replaced",saved_here:"Saved to this folder",save_q:"How do you want to save?",
-  save_copy:"Save a copy in this folder",replace:"Replace the original",download:"Download to device",dl_started:"Downloading...",dl_hint:"Type a file name (e.g. photo.jpg), then tap OK",
+  save_copy:"Save a copy in this folder",replace:"Replace the original",download:"Download to device",dl_started:"Downloading...",dl_hint:"Type a file name (e.g. photo.jpg), then tap OK",chrome_hint:"Opening your browser, tap “Download” there",
   crop:"Crop",rotate:"Rotate",filters:"Filters",adjust:"Adjust",text:"Text",free:"Free",apply:"Apply",reset:"Reset",
   brightness:"Brightness",contrast:"Contrast",saturation:"Saturation",
   f_orig:"Original",f_bw:"B&W",f_sepia:"Sepia",f_vivid:"Vivid",f_warm:"Warm",f_cool:"Cool",f_fade:"Fade",f_drama:"Drama",
@@ -688,7 +688,20 @@ function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^
 const blobToUrl=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error||new Error("read"));r.readAsDataURL(b)});
 const isWV=/; wv\)/i.test(navigator.userAgent);
 function dataToBlob(url){const i=url.indexOf(","),mt=(url.slice(5,i).split(";")[0])||"image/jpeg",bin=atob(url.slice(i+1)),u8=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)u8[k]=bin.charCodeAt(k);return new Blob([u8],{type:mt})}
-function dlBlob(blob,name){if(isWV){toast(xt("dl_hint"));blob=new Blob([blob],{type:"application/pdf"})}const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800000)}
+async function packForChrome(blob){
+  const im=await loadImg(await blobToUrl(blob)),png=/png|webp|gif/.test(blob.type);let mx=1200,q=.82,out="";
+  for(let i=0;i<14;i++){
+    const s=Math.min(1,mx/Math.max(im.naturalWidth,im.naturalHeight)),w=Math.max(1,Math.round(im.naturalWidth*s)),h=Math.max(1,Math.round(im.naturalHeight*s));
+    const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");
+    if(!png){x.fillStyle="#fff";x.fillRect(0,0,w,h)} x.drawImage(im,0,0,w,h);
+    const u=c.toDataURL(png?"image/png":"image/jpeg",q),b=u.slice(u.indexOf(",")+1);
+    out=(png?"png":"jpg")+":"+b; if(b.length<=240000)break;
+    if(!png&&q>.5)q-=.08; else mx=Math.round(mx*.82);
+  }
+  return out}
+function openInBrowser(packed){const a=document.createElement("a");a.href=new URL("save.html",location.href).href+"#"+packed;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
+function dlBlob(blob,name){
+  if(isWV){toast(xt("chrome_hint"));packForChrome(blob).then(openInBrowser).catch(e=>{console.error(e);toast(xt("err"))});return}const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1800000)}
 
 /* ---- التخزين: IndexedDB وبديل في الذاكرة ---- */
 let mine=[],mineReady=false,dbp=null,memOnly=false,memWarned=false;
